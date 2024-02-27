@@ -69,5 +69,3 @@ ros2 run turtlebot3_teleop teleop_keyboard
 <p align="center">
   <img src="docs/world.png" alt="Exemplo de Imagem">
 </p>
-
-Para abrir um segundo terminal:
