@@ -13,13 +13,13 @@ services:
       - "3000:80"
 
   ros-master:
-    # image: turtlebot3:latest
+    image: turtlebot3:latest
     build: 
       context: .
       dockerfile: Dockerfile
     ipc: host
-    # volumes:
-    #   - ./src:/turtlebot3_ws/src:rw
+    volumes:
+       - ./src:/turtlebot3_ws/src:rw
     depends_on:
       - xserver
     volumes_from:
@@ -31,7 +31,7 @@ services:
       - /bin/bash
       - -c
       - |
-        # source /opt/ros/humble/setup.bash &&
-        # colcon build --symlink-install && 
-        # source install/setup.bash &&
+        source /opt/ros/humble/setup.bash &&
+        colcon build --symlink-install && 
+        source install/setup.bash &&
         xterm -hold -T Terminal -e "tmux" 

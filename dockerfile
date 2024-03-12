@@ -6,6 +6,13 @@ ENV ROS_DISTRO=humble
 
 SHELL [ "/bin/bash" , "-c"]
 
+# Setup Environment
+RUN apt-get update \
+ && apt-get install -yq python3-pip apt-utils git vim python3-colcon-common-extensions
+
+# Install Dependencies with pip
+RUN pip3 install transforms3d setuptools==58.2.0 pyserial smbus trimesh scipy pandas pytest
+
 RUN apt-get update
 RUN apt install -y xterm tmux git
 RUN apt install -y ros-${ROS_DISTRO}-gazebo-ros 
@@ -19,9 +26,14 @@ RUN apt install -y ros-${ROS_DISTRO}-turtlebot3-msgs
 RUN apt install -y ros-${ROS_DISTRO}-turtlebot3
 RUN apt install -y ros-${ROS_DISTRO}-turtlebot3-gazebo
 
-# cria e determina diretório da area de trabalho
 RUN mkdir /turtlebot3_ws
 WORKDIR /turtlebot3_ws
+
+# Source ROS and Build
+RUN cd /turtlebot3_ws && source /opt/ros/humble/setup.bash && colcon build --symlink-install
+
+# Source ROS and Build
+RUN echo "source /turtlebot3_ws/install/setup.bash" >> ~/.bashrc
 
 # config tmux
 RUN echo "unbind -n Tab"                                                                    >> ~/.tmux.conf
@@ -37,4 +49,4 @@ RUN echo "bind-key -n C-Down select-pane -D"                                    
 RUN echo "bind -n M-Right split-window -h"                                                  >> ~/.tmux.conf
 RUN echo "bind -n M-Down split-window -v"                                                   >> ~/.tmux.conf
 RUN echo "bind C-c run 'tmux save-buffer - | xclip -i -sel clipboard'"                      >> ~/.tmux.conf
-RUN echo "bind C-v run 'tmux set-buffer '\$(xclip -o -sel clipboard)'; tmux paste-buffer'"   >> ~/.tmux.conf
+RUN echo "bind C-v run 'tmux set-buffer '\$(xclip -o -sel clipboard)'; tmux paste-buffer'"  >> ~/.tmux.conf
