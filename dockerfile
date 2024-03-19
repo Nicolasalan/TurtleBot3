@@ -35,6 +35,15 @@ RUN cd /turtlebot3_ws && source /opt/ros/humble/setup.bash && colcon build --sym
 # Source ROS and Build
 RUN echo "source /turtlebot3_ws/install/setup.bash" >> ~/.bashrc
 
+RUN echo 'export ROS_DOMAIN_ID=30 #TURTLEBOT3' >> ~/.bashrc
+RUN source ~/.bashrc
+
+RUN echo 'export LDS_MODEL=LDS-02' >> ~/.bashrc
+RUN source ~/.bashrc
+
+RUN echo 'TURTLEBOT3_MODEL=burger' >> ~/.bashrc
+RUN source ~/.bashrc
+
 # config tmux
 RUN echo "unbind -n Tab"                                                                    >> ~/.tmux.conf
 RUN echo "set -g window-style        'fg=#ffffff,bg=#8445ca'"                               >> ~/.tmux.conf

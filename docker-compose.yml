@@ -27,6 +27,9 @@ services:
     environment:  
       - ROS_MASTER_URI=:http://ros-master:11311    
       - DISPLAY=:9
+      - ROS_DOMAIN_ID=30
+      - LDS_MODEL=LDS-02
+      - TURTLEBOT3_MODEL=burger
     command:
       - /bin/bash
       - -c
@@ -35,3 +38,8 @@ services:
         colcon build --symlink-install && 
         source install/setup.bash &&
         xterm -hold -T Terminal -e "tmux" 
+
+  init:
+    container_name: init
+    extends: ros-master
+    command: bash -c "source /opt/ros/humble/setup.bash && ros2 launch turtlebot3_gazebo turtlebot3_house.launch.py"
