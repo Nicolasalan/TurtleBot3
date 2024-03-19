@@ -1,7 +1,6 @@
-version: '2'
+version: "2"
 
 services:
-  
   xserver:
     image: devrt/xserver
     ipc: host
@@ -14,18 +13,18 @@ services:
 
   ros-master:
     image: turtlebot3:latest
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ipc: host
     volumes:
-       - ./src:/turtlebot3_ws/src:rw
+      - ./src:/turtlebot3_ws/src:rw
     depends_on:
       - xserver
     volumes_from:
       - xserver
-    environment:  
-      - ROS_MASTER_URI=:http://ros-master:11311    
+    environment:
+      - ROS_MASTER_URI=:http://ros-master:11311
       - DISPLAY=:9
       - ROS_DOMAIN_ID=30
       - LDS_MODEL=LDS-02
@@ -35,11 +34,20 @@ services:
       - -c
       - |
         source /opt/ros/humble/setup.bash &&
-        colcon build --symlink-install && 
+        colcon build --symlink-install &&
         source install/setup.bash &&
-        xterm -hold -T Terminal -e "tmux" 
+        xterm -hold -T Terminal -e "tmux"
 
-  init:
-    container_name: init
+  setup:
+    container_name: setup
     extends: ros-master
     command: bash -c "source /opt/ros/humble/setup.bash && ros2 launch turtlebot3_gazebo turtlebot3_house.launch.py"
+
+  terminal:
+    container_name: terminal
+    extends: ros-master
+    command:
+      - /bin/bash
+      - -c
+      - |
+        xterm -hold -T Terminal -e "tmux"
