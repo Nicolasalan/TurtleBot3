@@ -1,7 +1,7 @@
 ARG IMG=osrf/ros:humble-desktop-full
 FROM ${IMG}
 
-ARG DEBIAN_FRONTEND=noninteractive 
+ARG DEBIAN_FRONTEND=noninteractive
 ENV ROS_DISTRO=humble
 
 SHELL [ "/bin/bash" , "-c"]
@@ -11,11 +11,11 @@ RUN apt-get update \
  && apt-get install -yq python3-pip apt-utils git vim python3-colcon-common-extensions
 
 # Install Dependencies with pip
-RUN pip3 install transforms3d setuptools==58.2.0 pyserial smbus trimesh scipy pandas pytest
+RUN pip3 install transforms3d setuptools==58.2.0 pyserial smbus trimesh scipy pandas pytest matplotlib
 
 RUN apt-get update
 RUN apt install -y xterm tmux git
-RUN apt install -y ros-${ROS_DISTRO}-gazebo-ros 
+RUN apt install -y ros-${ROS_DISTRO}-gazebo-ros
 RUN apt install -y ros-${ROS_DISTRO}-gazebo-ros-pkgs
 RUN apt install -y ros-${ROS_DISTRO}-cartographer
 RUN apt install -y ros-${ROS_DISTRO}-cartographer-ros
@@ -50,7 +50,7 @@ RUN echo "set -g window-style        'fg=#ffffff,bg=#8445ca'"                   
 RUN echo "set -g window-active-style 'fg=#ffffff,bg=#5e2b97'"                               >> ~/.tmux.conf
 RUN echo "set-option -g default-shell '/bin/bash'"                                          >> ~/.tmux.conf
 RUN echo "run-shell '. /opt/ros/humble/setup.bash'"                                         >> ~/.tmux.conf
-RUN echo "set -g mouse on"                                                                  >> ~/.tmux.conf 
+RUN echo "set -g mouse on"                                                                  >> ~/.tmux.conf
 RUN echo "bind-key -n C-Left select-pane -L"                                                >> ~/.tmux.conf
 RUN echo "bind-key -n C-Right select-pane -R"                                               >> ~/.tmux.conf
 RUN echo "bind-key -n C-Up select-pane -U"                                                  >> ~/.tmux.conf

@@ -13,6 +13,8 @@ from math import exp, sqrt, pi
 from math import cos, sin
 import numpy as np
 
+from matplotlib import pyplot as plt
+
 Inf = float('inf')
 
 class Localization(Node):
@@ -30,6 +32,9 @@ class Localization(Node):
         self.joint = [0, 0]
         self.create_subscription(JointState, '/joint_states', self.joint_callback, qos_profile)
 
+        self.cmd = 0
+        self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, qos_profile)
+
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
 
         self.raio = 0.033
@@ -40,12 +45,21 @@ class Localization(Node):
         self.distancias = [0, 0]
 
         self.estado_inicial = -1.999
-        self.mapa = 1.07810
+        self.mapa = [-2, -0.561, 0.569]
         self.pose[0] = self.estado_inicial
 
         self.sigma_odometria = 0.2 # rad
         self.sigma_lidar = 0.175 # meters
         self.sigma_movimento = 0.002 # m
+
+        self.porta = 0
+        self.controle = 0
+
+        self.x = np.linspace(-4.5, 4.5, 500) # cria um vetor x de 500 valores entre -4.5 e 4.5
+        self.y = np.zeros(500) # cria um vetor y de 500 valores zeros
+        self.y2 = np.zeros(500)
+        self.y3 = np.zeros(500)
+        self.fig, self.ax = plt.subplots()
 
     def gaussian(self, x, mean, sigma):
         return (1 / (sigma*sqrt(2*pi))) * exp(-((x-mean)**2) / (2*sigma**2))
@@ -74,6 +88,10 @@ class Localization(Node):
         self.joint = msg.position
         #self.get_logger().info(str(self.joint))
 
+    def cmd_vel_callback(self, msg):
+        self.cmd = msg.linear.x
+        #self.get_logger().info(str(self.joint))
+
     def listener_callback_laser(self, msg):
         self.laser = msg.ranges
         #self.get_logger().info(str(self.laser))
@@ -83,32 +101,57 @@ class Localization(Node):
         #self.get_logger().info(str(self.pose))
 
     def navigation_start(self):
-        pass
-        #self.get_logger().info("Inicialize seu código aqui!")
+        self.get_logger().info("Inicialize seu código aqui!")
 
     def navigation_update(self):
       #self.get_logger().info("Aqui acontece o loop principal do seu código!")
-      controle = 0
-      cont = 0
-      porta = 0
       leitura = self.laser
+      cont = 0
 
       self.update() # atualiza a nova pose do robô
+
+      print("Sigma_movimento: ", self.sigma_movimento)
+      print("Pose: ", self.pose[0])
+
+      if cont % 4 == 0: # a cada 4 passos, plotar em preto “b” a gaussiana da posição do robô em
+        for i in range(len(self.x)):
+            self.y[i] = self.gaussian(self.x[i], self.pose[0], self.sigma_movimento)
+        self.ax.clear()
+        self.ax.set_ylim([0, 4])
+        self.ax.plot(self.x, self.y, color="b")
+        plt.pause(0.1)
+
+      if self.cmd > 0:
+            self.controle = 1
+
       if len(leitura) == 0:
           pass
       else:
-        if controle == 1:
+        if self.controle == 1:
             self.sigma_movimento = self.sigma_movimento + 0.002
-        if leitura[72] == Inf and leitura[108] == Inf:
-            media_nova = (self.mapa * self.sigma_movimento + self.pose[0]*self.sigma_lidar) / (self.sigma_movimento+self.sigma_lidar)
+        if (leitura[72] >= 1.50 and leitura[72] <= 1.60) and (leitura[108] >= 1.50 and leitura[108] <= 1.60):
+            media_nova = (self.mapa[self.porta] * self.sigma_movimento + self.pose[0]*self.sigma_lidar) / (self.sigma_movimento+self.sigma_lidar)
             sigma_novo = 1 / (1/self.sigma_movimento + 1/self.sigma_lidar)
 
             self.pose[0] = media_nova # a nova posição x do robô
+
+            for i in range(len(self.x)):
+                self.y2[i] = self.gaussian(self.x[i], self.mapa[self.porta], self.sigma_lidar)
+                self.ax.plot(self.x, self.y2, color="r")
+                plt.pause(0.1)
+
             sigma_movimento = sigma_novo
 
-            if porta == 0: porta = 1 # altera para a próxima porta 0 → 1 ; 1 → 2
-            elif porta == 1: porta = 2
-      cont += 1
+            for i in range(len(self.x)):
+                self.y3[i] = self.gaussian(self.x[i], media_nova, sigma_novo)
+                self.ax.plot(self.x, self.y3, color="g")
+                plt.pause(0.1)
+
+            if self.porta == 0:
+                self.porta = 1 # altera para a próxima porta 0 → 1 ; 1 → 2
+
+            elif self.porta == 1:
+                self.porta = 2
 
 def main(args=None):
     rclpy.init(args=args)
