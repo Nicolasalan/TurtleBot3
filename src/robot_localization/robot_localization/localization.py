@@ -45,7 +45,7 @@ class Localization(Node):
         self.distancias = [0, 0]
 
         self.estado_inicial = -1.999
-        self.mapa = [-2, -0.561, 0.569]
+        self.mapa = [-1.66, -0.561, 0.569]
         self.pose[0] = self.estado_inicial
 
         self.sigma_odometria = 0.2 # rad
