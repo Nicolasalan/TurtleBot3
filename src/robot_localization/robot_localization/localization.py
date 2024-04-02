@@ -14,16 +14,31 @@ from math import cos, sin
 import numpy as np
 
 try:
+    # Robô Simulation
+    # Uso
+    # >>> ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+    # >>> ros2 run robot_localization localization
+    # >>> ros2 run turtlebot3_teleop teleop_keyboard
+    # Ir até o final da arena que o grafico vermelho aparece
+
     from matplotlib import pyplot as plt
     PLOT = True
+
+    MIN_RANGE = 1.50
+    MAX_RANGE = 1.60
+
+    MAP = [-1.66, -0.561, 0.569]
+    INI = -1.999
+
 except:
+    # Robô Real
     PLOT = False
 
-MIN_RANGE = 1.50
-MAX_RANGE = 1.60
+    MIN_RANGE = 0.40
+    MAX_RANGE = 0.60
 
-MAP = [-1.4806214474165549, -1.5211909114391624]
-INI = -1.6513183381797376
+    MAP = [0.17724671338431247,0.8740355629994777, 1.5511474134419185]
+    INI = -0.165394658160263
 
 class Localization(Node):
 
@@ -52,8 +67,8 @@ class Localization(Node):
         self.ultimas_medidas = [0, 0]
         self.distancias = [0, 0]
 
-        self.estado_inicial = INI # -1.999
-        self.mapa = MAP #  -1.4806214474165549 ou  -1.462728444945766, | -1.5211909114391624 # [-1.66, -0.561, 0.569]
+        self.estado_inicial = INI
+        self.mapa = MAP
         self.pose[0] = self.estado_inicial
         self.sigma_odometria = 0.2 # rad
         self.sigma_lidar = 0.175 # meters
@@ -63,8 +78,8 @@ class Localization(Node):
         self.controle = 0
 
         if PLOT:
-            self.x = np.linspace(-4.5, 4.5, 500) # cria um vetor x de 500 valores entre -4.5 e 4.5
-            self.y = np.zeros(500) # cria um vetor y de 500 valores zeros
+            self.x = np.linspace(-4.5, 4.5, 500)
+            self.y = np.zeros(500)
             self.y2 = np.zeros(500)
             self.y3 = np.zeros(500)
             self.fig, self.ax = plt.subplots()
@@ -138,7 +153,7 @@ class Localization(Node):
             media_nova = (self.mapa[self.porta] * self.sigma_movimento + self.pose[0]*self.sigma_lidar) / (self.sigma_movimento+self.sigma_lidar)
             sigma_novo = 1 / (1/self.sigma_movimento + 1/self.sigma_lidar)
 
-            self.pose[0] = media_nova # a nova posição x do robô
+            self.pose[0] = media_nova
 
             if PLOT:
                 for i in range(len(self.x)):
