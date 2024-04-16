@@ -20,6 +20,7 @@ try:
     # >>> ros2 run robot_localization localization
     # >>> ros2 run turtlebot3_teleop teleop_keyboard
     # Ir até o final da arena que o grafico vermelho aparece
+    # https://github.com/Nicolasalan/localization
 
     from matplotlib import pyplot as plt
     PLOT = True
