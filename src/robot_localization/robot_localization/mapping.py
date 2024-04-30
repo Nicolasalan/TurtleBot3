@@ -15,8 +15,8 @@ from math import cos, sin
 import numpy as np
 import math
 
-
 from matplotlib import pyplot as plt
+from typing import Tuple
 
 class Mapping(Node):
 
@@ -38,11 +38,9 @@ class Mapping(Node):
     def listener_callback_laser(self, msg):
         self.measurements = [msg.range_max if np.isinf(m) else m for m in msg.ranges]
 
-        # Obter o ângulo inicial e o incremento angular
         angle_min = msg.angle_min
         angle_increment = msg.angle_increment
 
-        # Calcular os ângulos correspondentes a cada medida de distância
         num_measurements = len(self.measurements)
         self.angles = [angle_min + i * angle_increment for i in range(num_measurements)]
 
@@ -56,7 +54,7 @@ class Mapping(Node):
     def navigation_start(self):
         self.get_logger().info("Inicialize seu código aqui!")
 
-    def bresenham(self, start, end):
+    def bresenham(self, start: Tuple[int], end: Tuple[int]) -> np.ndarray:
         """
         Implementation of Bresenham's line drawing algorithm
         See en.wikipedia.org/wiki/Bresenham's_line_algorithm
@@ -120,18 +118,16 @@ class Mapping(Node):
         min_x, min_y, max_x, max_y, x_w, y_w = self.calc_grid_map_config(
             ox, oy, xy_resolution)
 
-        # default 0.5 -- [[0.5 for i in range(y_w)] for i in range(x_w)]
         occupancy_map = np.ones((350, 300)) / 2
         center_x = int(
-            round(-min_x / xy_resolution))  # center x coordinate of the grid map
+            round(-min_x / xy_resolution))
         center_y = int(
-            round(-min_y / xy_resolution))  # center y coordinate of the grid map
+            round(-min_y / xy_resolution))
 
         for (x, y) in zip(ox, oy):
             ix = int(round((x - min_x) / xy_resolution))
             iy = int(round((y - min_y) / xy_resolution))
 
-            # Verifique se as coordenadas estão dentro dos limites da matriz atual
             if 0 <= ix < occupancy_map.shape[0] and 0 <= iy < occupancy_map.shape[1]:
                 laser_beams = self.bresenham((center_x, center_y), (ix, iy))
                 for laser_beam in laser_beams:
@@ -142,43 +138,23 @@ class Mapping(Node):
                     occupancy_map[ix + 1][iy] = 1.0
                     occupancy_map[ix][iy + 1] = 1.0
                     occupancy_map[ix + 1][iy + 1] = 1.0
-            # else:
-            #     # Expanda a matriz para incluir a nova posição do robô
-            #     new_width = max(occupancy_map.shape[0], ix + 10)  # aumente em 10 células
-            #     new_height = max(occupancy_map.shape[1], iy + 10)  # aumente em 10 células
-            #     expanded_map = np.ones((new_width, new_height)) / 2
-            #     # Copie os valores da matriz original para a nova matriz
-            #     expanded_map[:occupancy_map.shape[0], :occupancy_map.shape[1]] = occupancy_map
-            #     occupancy_map = expanded_map
 
         return occupancy_map, min_x, max_x, min_y, max_y, xy_resolution
 
     def navigation_update(self):
-        xyreso = 0.02  # x-y grid resolution
+        xyreso = 0.02
         if len(self.measurements) == 0:
             pass
         else:
-            odometry = [self.x, self.y, self.theta]
-            #plt.clf()  # Clear the current figure.
-
-            xyreso = 0.02
             ox = np.sin(self.angles) * self.measurements
             oy = np.cos(self.angles) * self.measurements
-            pmap, minx, maxx, miny, maxy, xyreso = self.generate_ray_casting_grid_map(ox, oy, xyreso, True)
 
-            self.map_measurements += pmap
+            pmap, minx, maxx, miny, maxy, xyreso = self.generate_ray_casting_grid_map(ox, oy, xyreso, True)
 
             # numpy.ndarray
             # (350, 300)
-
-            # Adiciona pmap a self.map_measurements
-            #if not hasattr(self, 'map_measurements'):
-            #    self.map_measurements = pmap
-            #else:
-            #    self.map_measurements += pmap
-
             plt.imshow(pmap.T, cmap='gray', origin='lower')
-            plt.pause(0.001)  # Pause to update the figure.
+            plt.pause(0.001)
 
 
 def main(args=None):
