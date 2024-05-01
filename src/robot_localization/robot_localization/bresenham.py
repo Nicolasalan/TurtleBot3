@@ -30,21 +30,27 @@ class Mapping(Node):
         self.x = None
         self.y = None
         self.theta = None
-        self.range_max = None
         self.angles = []
         self.measurements = []
         self.map_measurements = np.ones((350, 300)) / 2
 
+        self.xy_resolution = 0.02
+        self.map_size = (350, 300)  # Tamanho do mapa (local)
+        self.map = np.ones(self.map_size) / 2  # Mapa inicial
+        self.fixed_obstacles = []
+        self.obstacle_plot = None
+
     def listener_callback_laser(self, msg):
-        self.measurements = [msg.range_max if np.isinf(m) else m for m in msg.ranges]
+        # remova valores inf
+        self.measurements = [m for m in msg.ranges if not np.isinf(m)]
 
         angle_min = msg.angle_min
         angle_increment = msg.angle_increment
 
         num_measurements = len(self.measurements)
+        # para cada angulo de medição, calcula o angulo absoluto
         self.angles = [angle_min + i * angle_increment for i in range(num_measurements)]
 
-        self.range_max = msg.range_max
 
     def listener_callback_odom(self, msg):
         self.x = msg.pose.pose.position.x
@@ -56,34 +62,35 @@ class Mapping(Node):
 
     def bresenham(self, start: Tuple[int], end: Tuple[int]) -> np.ndarray:
         """
-        Implementation of Bresenham's line drawing algorithm
-        See en.wikipedia.org/wiki/Bresenham's_line_algorithm
-        Bresenham's Line Algorithm
-        Produces a np.array from start and end (original from roguebasin.com)
-        >>> points1 = bresenham((4, 4), (6, 10))
-        >>> print(points1)
-        np.array([[4,4], [4,5], [5,6], [5,7], [5,8], [6,9], [6,10]])
+        Implementação do algoritmo de desenho de linha de Bresenham
+        -> wikipedia.org/wiki/Bresenham's_line_algorithm
+        Algoritmo de Linha de Bresenham
+        Produz um np.array do início e do fim
+        >>> pontos = bresenham((4, 4), (6, 10))
+        >>> imprimir(pontos)
+        array([[4,4], [4,5], [5,6], [5,7], [5,8], [6,9], [6,10]])
         """
-        # setup initial conditions
+        # configura condições iniciais
         x1, y1 = start
         x2, y2 = end
         dx = x2 - x1
         dy = y2 - y1
-        is_steep = abs(dy) > abs(dx)  # determine how steep the line is
-        if is_steep:  # rotate line
+        is_steep = abs(dy) > abs(dx) # determina o quão íngreme é a linha
+        if is_steep:  # girar linha
+            # inverte os valores
             x1, y1 = y1, x1
             x2, y2 = y2, x2
-        # swap start and end points if necessary and store swap state
+        # troque os pontos inicial e final, se necessário, e armazene o estado de troca
         swapped = False
         if x1 > x2:
             x1, x2 = x2, x1
             y1, y2 = y2, y1
             swapped = True
-        dx = x2 - x1  # recalculate differentials
-        dy = y2 - y1  # recalculate differentials
-        error = int(dx / 2.0)  # calculate error
+        dx = x2 - x1  # recalcular diferenciais
+        dy = y2 - y1  # recalcular diferenciais
+        error = int(dx / 2.0)  # calcular o erro
         y_step = 1 if y1 < y2 else -1
-        # iterate over bounding box generating points between start and end
+        # iterar sobre a caixa delimitadora gerando pontos entre o início e o fim
         y = y1
         points = []
         for x in range(x1, x2 + 1):
@@ -93,15 +100,15 @@ class Mapping(Node):
             if error < 0:
                 y += y_step
                 error += dx
-        if swapped:  # reverse the list if the coordinates were swapped
+        if swapped:  # reverter a lista se as coordenadas foram trocadas
             points.reverse()
         points = np.array(points)
         return points
 
     def calc_grid_map_config(self, ox, oy, xy_resolution):
         """
-        Calculates the size, and the maximum distances according to the the
-        measurement center
+        Calcula o tamanho e as distâncias máximas de acordo com o
+        centro de medição
         """
 
         EXTEND_AREA = 1.0
@@ -141,20 +148,24 @@ class Mapping(Node):
 
         return occupancy_map, min_x, max_x, min_y, max_y, xy_resolution
 
-    def navigation_update(self):
+    def update_map(self):
         xyreso = 0.02
+        robot_pos = (self.x, self.y)
+        ox = np.sin(self.angles) * self.measurements
+        oy = np.cos(self.angles) * self.measurements
+
+        pmap, minx, maxx, miny, maxy, xyreso = self.generate_ray_casting_grid_map(ox, oy, xyreso, True)
+
+        self.map = pmap
+
+        plt.imshow(self.map.T, cmap='gray', origin='lower')
+        plt.pause(0.001)
+
+    def navigation_update(self):
         if len(self.measurements) == 0:
             pass
         else:
-            ox = np.sin(self.angles) * self.measurements
-            oy = np.cos(self.angles) * self.measurements
-
-            pmap, minx, maxx, miny, maxy, xyreso = self.generate_ray_casting_grid_map(ox, oy, xyreso, True)
-
-            # numpy.ndarray
-            # (350, 300)
-            plt.imshow(pmap.T, cmap='gray', origin='lower')
-            plt.pause(0.001)
+            self.update_map()
 
 
 def main(args=None):
