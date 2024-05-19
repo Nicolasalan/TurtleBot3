@@ -18,7 +18,7 @@ import math
 from matplotlib import pyplot as plt
 from typing import Tuple
 
-class Mapping(Node):
+class MappingBresenham(Node):
 
     def __init__(self):
         super().__init__('mapping')
@@ -171,7 +171,7 @@ class Mapping(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    navigator = Mapping()
+    navigator = MappingBresenham()
 
     try:
         rclpy.spin_once(navigator)

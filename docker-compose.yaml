@@ -37,8 +37,3 @@ services:
         colcon build --symlink-install &&
         source install/setup.bash &&
         xterm -hold -T Terminal -e "tmux"
-
-  setup:
-    container_name: setup
-    extends: ros-master
-    command: bash -c "source /opt/ros/humble/setup.bash && ros2 launch turtlebot3_gazebo turtlebot3_house.launch.py"
